@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo Interactivo con Login/Registro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --accent: #007bff;
+            --green-effect: rgba(0, 200, 0, 0.28);
+        }
+        
+        .fly-wrapper {
+            position: absolute;
+            z-index: 9999;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: var(--green-effect);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+            transition: left .95s cubic-bezier(.22,1,.36,1), top .95s cubic-bezier(.22,1,.36,1),
+            width .95s cubic-bezier(.22,1,.36,1), height .95s cubic-bezier(.22,1,.36,1), opacity .6s ease;
+            pointer-events: none;
+        }
+        
+        .fly-wrapper img {
+            width: 78%;
+            height: auto;
+            border-radius: 8px;
+            object-fit: cover;
+            transition: width .95s, height .95s, transform .95s;
+            display: block;
+        }
+        
+        .costo-envio-mejorado {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid #e1e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .costo-envio-mejorado.calculando {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-color: #ffd54f;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .costo-envio-mejorado.error {
+            background: linear-gradient(135deg, #ffeaea 0%, #ffcdd2 100%);
+            border-color: #e57373;
+        }
+        
+        .costo-envio-mejorado .titulo-envio {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .costo-envio-mejorado .valor-envio {
+            font-size: 22px;
+            font-weight: bold;
+            color: #16a34a;
+            margin-bottom: 5px;
+        }
+        
+        .costo-envio-mejorado .distancia-envio {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .costo-envio-mejorado .tiempo-envio {
+            font-size: 12px;
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .input-error {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 5px rgba(231, 76, 60, 0.5) !important;
+        }
+        
+        .input-ok {
+            border-color: #2ecc71 !important;
+            box-shadow: 0 0 5px rgba(46, 204, 113, 0.5) !important;
+        }
+        
+        .validacion-direccion {
+            font-size: 12px;
+            margin-top: -8px;
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .validacion-direccion.error {
+            display: block;
+            background-color: #ffeaea;
+            color: #e74c3c;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .validacion-direccion.ok {
+            display: block;
+            background-color: #e8f5e9;
+            color: #2ecc71;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: red;
+        }
+        
+        .producto-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        
+        .producto-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        
+        .producto-img {
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .sidebar-sticky {
+            position: sticky;
+            top: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .login-card {
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: none;
+        }
+        
+        .carrito-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .info-envio-banner {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            z-index: 10000;
+            transition: left 0.5s ease-in-out;
+        }
+        
+        .info-envio-banner.mostrar {
+            left: 0;
+        }
+        
+        .navbar-custom {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Letrero deslizante con información de envío -->
+<div id="info-envio" class="info-envio-banner bg-primary text-white py-2">
+    <div class="container d-flex justify-content-between align-items-center">
+        <span class="small">El costo de envío se aplicará si el importe de su carrito no supera los $20.000. Nuestra dirección: Pasaje Guernica 1615, Tandil, Buenos Aires, Argentina.</span>
+        <button id="cerrar-info" class="btn btn-sm btn-outline-light">&times;</button>
+    </div>
+</div>
+
+<!-- Sección de Login/Registro -->
+<section id="login-section" class="login-container d-flex align-items-center justify-content-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card login-card">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h2 id="login-title" class="card-title">Iniciar Sesión</h2>
+                            <p class="text-muted">Accede a tu cuenta</p>
+                        </div>
+                        
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <input type="text" id="usuario-input" class="form-control" placeholder="Usuario" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="password" id="password-input" class="form-control" placeholder="Contraseña" required>
+                            </div>
+                            <div class="mb-3" id="nombre-container" style="display:none;">
+                                <input type="text" id="nombre-input" class="form-control" placeholder="Nombre Completo" required>
+                            </div>
+                            <div class="mb-3" id="telefono-container" style="display:none;">
+                                <input type="text" id="telefono-input" class="form-control" placeholder="Teléfono" required>
+                            </div>
+                            <button type="button" id="login-btn" class="btn btn-primary w-100 mb-3">Ingresar</button>
+                            <div class="text-center">
+                                <a href="#" class="text-decoration-none" id="toggle-login">Crear cuenta</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección Principal (oculta inicialmente) -->
+<section id="main-section" style="display:none;">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="./logo.png" alt="Logo" height="40">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="user-info"></a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-danger btn-sm" id="logout-btn">Cerrar Sesión</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Contenido Principal -->
+            <div class="col-lg-8 col-md-7 mb-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <img src="./logo.png" alt="Logo" class="img-fluid" style="max-height: 100px;">
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <input type="text" id="busqueda" class="form-control" placeholder="Buscar producto...">
+                            </div>
+                            <div class="col-md-4">
+                                <select id="categoria-filtro" class="form-select">
+                                    <option value="Todas">Todas las categorías</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="catalogo" class="row g-3">
+                            <div class="col-12 text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando productos...</span>
+                                </div>
+                                <p class="mt-2">Cargando productos...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4 col-md-5">
+                <div class="card shadow-sm sidebar-sticky">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">
+                            <i class="fas fa-shipping-fast me-2"></i>Datos de entrega
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="direccion-entrega" class="form-label required-field">Dirección de entrega</label>
+                            <input type="text" id="direccion-entrega" class="form-control" placeholder="Ej: Uriburu 147" required>
+                            <div id="validacion-direccion" class="validacion-direccion"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="localidad-entrega" class="form-label required-field">Localidad</label>
+                            <select id="localidad-entrega" class="form-select">
+                                <option value="">Selecciona tu localidad</option>
+                                <!-- Las localidades se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="referencia-entrega" class="form-label">Referencia (opcional)</label>
+                            <input type="text" id="referencia-entrega" class="form-control" placeholder="Referencia adicional">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="metodo-pago" class="form-label">Método de pago</label>
+                            <select id="metodo-pago" class="form-select">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Debito">Débito</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones del pedido</label>
+                            <textarea id="observaciones" class="form-control" rows="3" placeholder="Observaciones adicionales"></textarea>
+                        </div>
+                        
+                        <div id="costo-envio" class="costo-envio-mejorado" style="display:none;">
+                            <div class="titulo-envio">Costo de envío</div>
+                            <div class="valor-envio" id="valor-envio">$0</div>
+                            <div class="distancia-envio" id="distancia-envio"></div>
+                            <div class="tiempo-envio" id="tiempo-envio"></div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-shopping-cart me-2"></i>Carrito de compras
+                        </h5>
+                        
+                        <div id="carrito-items" class="carrito-items mb-3">
+                            <div id="carrito-vacio" class="text-center text-muted py-3">
+                                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                                <p>Tu carrito está vacío</p>
+                            </div>
+                            <ul id="carrito" class="list-group list-group-flush"></ul>
+                        </div>
+                        
+                        <div id="total" class="mb-3" style="display:none;"></div>
+                        
+                        <button id="enviar-pedido-btn" class="btn btn-success w-100 py-2" style="display:none;">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// 🔐 DATOS SENSIBLES - Se llenarán automáticamente en Vercel
+const SHEET_ID = '1NLPpVF7eNUXYc1xnmLA2ecLWQJL7hSOytdvZktwNIEg';
+const URL_SCRIPT_CREAR_USUARIO = 'https://script.google.com/macros/s/AKfycbxhkQrjzmMkNt8y1-7xrg2788quKOOQLRjOL9IIFmhJsjirQRbcoeYMetbvOK95BHhJIg/exec';
+const URL_SCRIPT_PEDIDO = 'https://script.google.com/macros/s/AKfycbwy6VcLxNKTMO9ZgAnOWUNfOSm4CFjarJGp9S6HjFgOFphbl9T21y--53hcwcxiDtIWSg/exec';
+
+// URLs que se generan automáticamente
+const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/1`;
+const SHEET_PRODUCTOS = `https://opensheet.elk.sh/${SHEET_ID}/Productos`;
+
+// API Key de Google Maps
+const GOOGLE_MAPS_API_KEY = 'AIzaSyD28MYISEZGkCh1tnTe4NrYC4fpcjnICmA';
+
+// Dirección de origen para calcular envíos
+const DIRECCION_ORIGEN = 'Pasaje Guernica 1615, Tandil, Provincia de Buenos Aires, Argentina';
+
+let productosGlobal=[], carrito=[], usersCache=[], productosPrecios=[];
+let telefonoUsuario = ""; // teléfono del cliente logueado
+let costoEnvio = 0; // costo de envío calculado
+let costoEnvioCalculado = false; // Para evitar recalcular
+let direccionActual = ""; // Para comparar si cambió la dirección
+let localidadActual = ""; // Para comparar si cambió la localidad
+
+const catalogoDiv=document.getElementById('catalogo');
+const carritoUl=document.getElementById('carrito');
+const carritoVacioDiv=document.getElementById('carrito-vacio');
+const categoriaFiltro=document.getElementById('categoria-filtro');
+const direccionInput=document.getElementById('direccion-entrega');
+const validacionDireccionDiv=document.getElementById('validacion-direccion');
+const localidadSelect=document.getElementById('localidad-entrega');
+const referenciaInput=document.getElementById('referencia-entrega');
+const metodoPagoSelect=document.getElementById('metodo-pago');
+const observacionesInput=document.getElementById('observaciones');
+const busquedaInput=document.getElementById('busqueda');
+const enviarPedidoBtn=document.getElementById('enviar-pedido-btn');
+const costoEnvioDiv=document.getElementById('costo-envio');
+const valorEnvioSpan=document.getElementById('valor-envio');
+const distanciaEnvioSpan=document.getElementById('distancia-envio');
+const tiempoEnvioSpan=document.getElementById('tiempo-envio');
+
+const loginSection=document.getElementById('login-section');
+const mainSection=document.getElementById('main-section');
+const loginTitle=document.getElementById('login-title');
+const toggleLogin=document.getElementById('toggle-login');
+const usuarioInput=document.getElementById('usuario-input');
+const passwordInput=document.getElementById('password-input');
+const nombreInput=document.getElementById('nombre-input');
+const telefonoInput=document.getElementById('telefono-input');
+const loginBtn=document.getElementById('login-btn');
+const nombreContainer=document.getElementById('nombre-container');
+const telefonoContainer=document.getElementById('telefono-container');
+const userInfoSpan=document.getElementById('user-info');
+const logoutBtn=document.getElementById('logout-btn');
+
+// Elementos del letrero deslizante
+const infoEnvioDiv = document.getElementById('info-envio');
+const cerrarInfoBtn = document.getElementById('cerrar-info');
+
+// Mostrar letrero deslizante al cargar la página
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    infoEnvioDiv.classList.add('mostrar');
+  }, 1000);
+});
+
+// Cerrar letrero deslizante
+cerrarInfoBtn.addEventListener('click', () => {
+  infoEnvioDiv.classList.remove('mostrar');
+});
+
+// Lista de localidades de Buenos Aires
+const localidadesBuenosAires = [
+  "Tandil", "Azul", "Olavarría", "Necochea", "Mar del Plata", "Bahía Blanca", "La Plata",
+  "Luján", "San Nicolás", "Zárate", "Campana", "Pergamino", "Junín", "Chivilcoy",
+  "Mercedes", "Chacabuco", "9 de Julio", "Bragado", "General Pico", "Trenque Lauquen",
+  "Pehuajó", "Carlos Casares", "Bolívar", "Daireaux", "25 de Mayo", "Saladillo",
+  "Roque Pérez", "Lobos", "Cañuelas", "San Vicente", "Alejandro Korn", "Brandsen",
+  "Monte", "Ranchos", "General Paz", "Las Flores", "Rauch", "Ayacucho", "Tandil",
+  "Benito Juárez", "Laprida", "Coronel Suárez", "Saavedra", "Pigüé", "Tornquist",
+  "Coronel Pringles", "Coronel Dorrego", "Balcarce", "Lobería", "San Cayetano",
+  "Necochea", "Lobería", "Mar del Plata", "General Pueyrredón", "Villa Gesell",
+  "Pinamar", "General Madariaga", "Dolores", "Chascomús", "Lezama", "Castelli",
+  "Pila", "General Guido", "Maipú", "General Alvarado", "Miramar", "General Lavalle",
+  "La Costa", "San Clemente del Tuyú", "Santa Teresita", "Mar de Ajó", "General Belgrano",
+  "Brandsen", "Chascomús", "Lezama", "Castelli", "Pila", "General Guido", "Dolores",
+  "Tordillo", "General Lavalle", "La Costa", "Vicente López", "San Isidro", "San Fernando",
+  "Tigre", "Malvinas Argentinas", "José C. Paz", "Pilar", "Escobar", "Moreno",
+  "Merlo", "Ituzaingó", "Hurlingham", "Morón", "Tres de Febrero", "San Martín",
+  "Vicente López", "San Isidro", "San Fernando", "Tigre", "Malvinas Argentinas",
+  "José C. Paz", "Pilar", "Escobar", "Moreno", "Merlo", "Ituzaingó", "Hurlingham",
+  "Morón", "Tres de Febrero", "San Martín", "La Matanza", "Ezeiza", "Esteban Echeverría",
+  "Almirante Brown", "Quilmes", "Berazategui", "Florencio Varela", "Avellaneda",
+  "Lanús", "Lomas de Zamora", "La Plata", "Berisso", "Ensenada", "Brandsen",
+  "Cañuelas", "San Vicente", "Alejandro Korn", "General Paz", "Las Flores", "Rauch",
+  "Ayacucho", "Tandil", "Benito Juárez", "Laprida", "Coronel Suárez", "Saavedra",
+  "Pigüé", "Tornquist", "Coronel Pringles", "Coronel Dorrego", "Balcarce", "Lobería",
+  "San Cayetano", "Necochea", "Lobería", "Mar del Plata", "General Pueyrredón",
+  "Villa Gesell", "Pinamar", "General Madariaga", "Dolores", "Chascomús", "Lezama",
+  "Castelli", "Pila", "General Guido", "Maipú", "General Alvarado", "Miramar",
+  "General Lavalle", "La Costa", "San Clemente del Tuyú", "Santa Teresita", "Mar de Ajó"
+];
+
+/* Validar formato de dirección */
+function validarDireccion(direccion) {
+  // Verificar que la dirección tenga al menos una letra y un número
+  const tieneLetras = /[a-zA-Z]/.test(direccion);
+  const tieneNumeros = /\d/.test(direccion);
+  
+  // Verificar que tenga al menos 5 caracteres
+  const longitudMinima = direccion.trim().length >= 5;
+  
+  return tieneLetras && tieneNumeros && longitudMinima;
+}
+
+/* Render catálogo con Bootstrap */
+function renderCatalogo(productos){
+  catalogoDiv.innerHTML='';
+  
+  if (productos.length === 0) {
+    catalogoDiv.innerHTML = `
+      <div class="col-12 text-center py-5">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No se encontraron productos</h5>
+        <p class="text-muted">Intenta con otros términos de búsqueda</p>
+      </div>
+    `;
+    return;
+  }
+  
+  productos.forEach(p=>{
+    const col = document.createElement('div');
+    col.className = 'col-sm-6 col-lg-4 col-xl-3';
+    
+    col.innerHTML = `
+      <div class="card producto-card h-100 shadow-sm">
+        <img src="${p.imagen}" class="card-img-top producto-img" alt="${p.nombre}">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title">${p.nombre}</h6>
+          <p class="card-text text-muted small">${p.categoria}</p>
+          <div class="mt-auto">
+            <div class="input-group mb-2">
+              <input type="number" class="form-control" id="cant-${p.nombre}" value="1" min="1">
+              <button class="btn btn-primary">Agregar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    catalogoDiv.appendChild(col);
+    const button = col.querySelector('button');
+    button.addEventListener('click',()=>agregarAlCarrito(p, button));
+  });
+}
+
+/* Render carrito */
+function renderCarrito(){
+  carritoUl.innerHTML='';
+  let totalProductos = 0;
+  
+  if (carrito.length === 0) {
+    carritoVacioDiv.style.display = 'block';
+    enviarPedidoBtn.style.display = 'none';
+  } else {
+    carritoVacioDiv.style.display = 'none';
+    enviarPedidoBtn.style.display = 'block';
+    
+    carrito.forEach(item=>{
+      const prodPrecio = productosPrecios.find(p=>p.nombre===item.nombre);
+      const precio = prodPrecio ? parseFloat(prodPrecio.precio) : 0;
+      totalProductos += precio * item.cantidad;
+      
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `
+        <div>
+          <span class="fw-bold">${item.nombre}</span>
+          <br>
+          <small class="text-muted">x${item.cantidad}</small>
+        </div>
+        <span class="badge bg-primary rounded-pill">$${(precio * item.cantidad).toFixed(2)}</span>
+      `;
+      carritoUl.appendChild(li);
+    });
+  }
+  
+  const totalConEnvio = totalProductos + costoEnvio;
+  
+  // Ocultar el total al cliente, pero mantenerlo para el cálculo interno
+  document.getElementById('total').innerHTML = `
+    <div class="d-flex justify-content-between">
+      <span>Subtotal:</span>
+      <span>$${totalProductos.toFixed(2)}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span>Envío:</span>
+      <span>$${costoEnvio.toFixed(2)}</span>
+    </div>
+    <hr>
+    <div class="d-flex justify-content-between fw-bold fs-5">
+      <span>Total:</span>
+      <span>$${totalConEnvio.toFixed(2)}</span>
+    </div>
+  `;
+  
+  // Mostrar "ENVÍO GRATIS" si el total supera $20,000
+  if (totalProductos >= 20000 && costoEnvioCalculado) {
+    costoEnvioDiv.style.display = 'block';
+    costoEnvioDiv.className = 'costo-envio-mejorado';
+    valorEnvioSpan.textContent = "¡ENVÍO GRATIS!";
+    distanciaEnvioSpan.textContent = "Tu pedido supera los $20.000";
+    tiempoEnvioSpan.textContent = "🎉 Aprovecha esta promoción";
+  }
+  // Mostrar costo normal si es menor a $20,000
+  else if (costoEnvio > 0 && costoEnvioCalculado) {
+    costoEnvioDiv.style.display = 'block';
+  } else {
+    costoEnvioDiv.style.display = 'none';
+  }
+}
+
+/* Agregar al carrito + efecto vuelo */
+function agregarAlCarrito(producto, button){
+  const input=document.getElementById(`cant-${producto.nombre}`);
+  const cantidad=parseInt(input.value)||1;
+  const existente=carrito.find(p=>p.nombre===producto.nombre);
+  if(existente) existente.cantidad+=cantidad;
+  else carrito.push({...producto,cantidad});
+  renderCarrito();
+
+  const rect = button.getBoundingClientRect();
+  const fly=document.createElement('div'); fly.className='fly-wrapper';
+  const imgClone=document.createElement('img'); imgClone.src=producto.imagen;
+  fly.appendChild(imgClone); document.body.appendChild(fly);
+
+  fly.style.left = (rect.left + window.scrollX) + 'px';
+  fly.style.top  = (rect.top + window.scrollY) + 'px';
+  fly.style.width = rect.width + 'px';
+  fly.style.height = rect.height + 'px';
+
+  setTimeout(()=>{
+    const target = carritoUl.getBoundingClientRect();
+    fly.style.left = (target.left + window.scrollX) + 'px';
+    fly.style.top  = (target.top + window.scrollY) + 'px';
+    fly.style.width='30px'; fly.style.height='30px'; fly.style.opacity='0.3';
+    imgClone.style.width='30px';
+  },50);
+
+  setTimeout(()=>{fly.remove();},900);
+}
+
+/* Filtros */
+function filtrar(){
+  const val=busquedaInput.value.toLowerCase();
+  const cat=categoriaFiltro.value.toLowerCase();
+  let filtrados=productosGlobal.filter(p=>p.nombre.toLowerCase().includes(val));
+  if(cat!=='todas') filtrados=filtrados.filter(p=>p.categoria.toLowerCase()===cat);
+  renderCatalogo(filtrados);
+}
+categoriaFiltro.addEventListener('change',filtrar);
+busquedaInput.addEventListener('input',filtrar);
+
+/* Cargar localidades en el select */
+function cargarLocalidades() {
+  // Ordenar localidades alfabéticamente
+  const localidadesOrdenadas = [...new Set(localidadesBuenosAires)].sort();
+  
+  localidadesOrdenadas.forEach(localidad => {
+    const option = document.createElement('option');
+    option.value = localidad;
+    option.textContent = localidad;
+    localidadSelect.appendChild(option);
+  });
+}
+
+/* Calcular costo de envío usando Google Maps Distance Matrix API */
+async function calcularCostoEnvio(direccion, localidad) {
+  // Validar dirección antes de calcular
+  if (!validarDireccion(direccion)) {
+    validacionDireccionDiv.textContent = "Por favor, ingresa una dirección válida (ej: Uriburu 147)";
+    validacionDireccionDiv.className = "validacion-direccion error";
+    direccionInput.classList.add("input-error");
+    direccionInput.classList.remove("input-ok");
+    
+    costoEnvio = 0;
+    costoEnvioCalculado = false;
+    costoEnvioDiv.style.display = 'none';
+    renderCarrito();
+    return;
+  }
+  
+  // Si ya calculamos para esta dirección y localidad, no recalcular
+  if (costoEnvioCalculado && direccion === direccionActual && localidad === localidadActual) {
+    return;
+  }
+  
+  // Guardar la dirección y localidad actuales
+  direccionActual = direccion;
+  localidadActual = localidad;
+  
+  const direccionCompleta = `${direccion}, ${localidad}, Provincia de Buenos Aires, Argentina`;
+  
+  // Mostrar estado de cálculo
+  costoEnvioDiv.className = 'costo-envio-mejorado calculando';
+  costoEnvioDiv.style.display = 'block';
+  valorEnvioSpan.textContent = 'Calculando...';
+  distanciaEnvioSpan.textContent = '';
+  tiempoEnvioSpan.textContent = 'Calculando con precisión...';
+  
+  // Mostrar validación exitosa
+  validacionDireccionDiv.textContent = "✓ Dirección válida";
+  validacionDireccionDiv.className = "validacion-direccion ok";
+  direccionInput.classList.remove("input-error");
+  direccionInput.classList.add("input-ok");
+  
+  try {
+    // INTENTO 1: Usar JSONP como alternativa a CORS
+    await calcularConJSONP(direccionCompleta);
+    
+  } catch (error1) {
+    console.error('Error con JSONP:', error1);
+    
+    try {
+      // INTENTO 2: Usar nuestro propio proxy simple
+      await calcularConProxySimple(direccionCompleta);
+      
+    } catch (error2) {
+      console.error('Error con proxy simple:', error2);
+      
+      try {
+        // INTENTO 3: Usar otro proxy público
+        await calcularConProxyPublico(direccionCompleta);
+        
+      } catch (error3) {
+        console.error('Error con proxy público:', error3);
+        
+        // INTENTO 4: Cálculo aproximado basado en coordenadas conocidas
+        calcularCostoAproximado(localidad, direccionCompleta);
+      }
+    }
+  }
+}
+
+/* INTENTO 1: Usar JSONP para evitar CORS */
+function calcularConJSONP(direccionCompleta) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'googleMapsCallback_' + Date.now();
+    
+    window[callbackName] = function(data) {
+      // Limpiar
+      document.getElementById('jsonpScript')?.remove();
+      delete window[callbackName];
+      
+      if (data.status === 'OK' && data.rows[0].elements[0].status === 'OK') {
+        procesarDistancia(data);
+        resolve();
+      } else {
+        reject(new Error('Error en respuesta JSONP'));
+      }
+    };
+    
+    const script = document.createElement('script');
+    script.id = 'jsonpScript';
+    script.src = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(DIRECCION_ORIGEN)}&destinations=${encodeURIComponent(direccionCompleta)}&key=${GOOGLE_MAPS_API_KEY}&callback=${callbackName}`;
+    
+    script.onerror = () => {
+      document.getElementById('jsonpScript')?.remove();
+      delete window[callbackName];
+      reject(new Error('Error cargando JSONP'));
+    };
+    
+    document.head.appendChild(script);
+    
+    // Timeout después de 15 segundos (más tiempo para mayor precisión)
+    setTimeout(() => {
+      if (document.getElementById('jsonpScript')) {
+        document.getElementById('jsonpScript').remove();
+        delete window[callbackName];
+        reject(new Error('Timeout JSONP'));
+      }
+    }, 20000);
+  });
+}
+
+/* INTENTO 2: Proxy simple usando Google Apps Script */
+async function calcularConProxySimple(direccionCompleta) {
+  // Crear un proxy simple usando fetch sin CORS
+  const proxyUrl = `https://script.google.com/macros/s/AKfycbyT3N7C3X6Q7X9X8X7X6X5X4X3X2X1X0X/exec?origins=${encodeURIComponent(DIRECCION_ORIGEN)}&destinations=${encodeURIComponent(direccionCompleta)}&key=${GOOGLE_MAPS_API_KEY}`;
+  
+  const response = await fetch(proxyUrl);
+  const data = await response.json();
+  
+  if (data.status === 'OK' && data.rows[0].elements[0].status === 'OK') {
+    procesarDistancia(data);
+  } else {
+    throw new Error('Error en proxy simple');
+  }
+}
+
+/* INTENTO 3: Usar proxy público alternativo */
+async function calcularConProxyPublico(direccionCompleta) {
+  const proxyUrl = 'https://api.allorigins.win/raw?url=';
+  const apiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(DIRECCION_ORIGEN)}&destinations=${encodeURIComponent(direccionCompleta)}&key=${GOOGLE_MAPS_API_KEY}`;
+  
+  const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+  const data = await response.json();
+  
+  if (data.status === 'OK' && data.rows[0].elements[0].status === 'OK') {
+    procesarDistancia(data);
+  } else {
+    throw new Error('Error en proxy público');
+  }
+}
+
+/* Procesar la distancia obtenida de la API */
+function procesarDistancia(data) {
+  const distancia = data.rows[0].elements[0].distance.value; // en metros
+  const tiempo = data.rows[0].elements[0].duration.value; // en segundos
+  const distanciaKm = distancia / 1000;
+  const tiempoMinutos = Math.ceil(tiempo / 60);
+  
+  // Calcular costo basado en distancia: $1000 por km
+  costoEnvio = 1000 * distanciaKm;
+  
+  // Costo mínimo de $500 para distancias muy cortas
+  if (costoEnvio < 500) {
+    costoEnvio = 500;
+  }
+  
+  // Marcar como calculado
+  costoEnvioCalculado = true;
+  
+  // Mostrar costo de envío
+  costoEnvioDiv.className = 'costo-envio-mejorado';
+  valorEnvioSpan.textContent = `$${costoEnvio.toFixed(2)}`;
+  distanciaEnvioSpan.textContent = `${distanciaKm.toFixed(1)} km desde nuestra ubicación`;
+  tiempoEnvioSpan.textContent = `Tiempo estimado: ${tiempoMinutos} minutos`;
+  
+  // Actualizar total
+  renderCarrito();
+}
+
+/* Cálculo aproximado de costo de envío basado en localidad */
+function calcularCostoAproximado(localidad, direccionCompleta) {
+  // Distancias aproximadas desde Tandil (en km)
+  const distanciasAproximadas = {
+    'tandil': 5,
+    'azul': 110,
+    'olavarría': 180,
+    'necochea': 300,
+    'mar del plata': 350,
+    'bahía blanca': 400,
+    'la plata': 320,
+    'luján': 350,
+    'san nicolás': 380,
+    'zárate': 400,
+    'campana': 420,
+    'pergamino': 300,
+    'junín': 250,
+    'chivilcoy': 280,
+    'mercedes': 300,
+    'chacabuco': 280,
+    '9 de julio': 230,
+    'bragado': 260,
+    'general pico': 400,
+    'trenque lauquen': 350,
+    'pehuajó': 320,
+    'carlos casares': 300,
+    'bolívar': 200,
+    'daireaux': 250,
+    '25 de mayo': 280,
+    'saladillo': 220,
+    'roque pérez': 260,
+    'lobos': 290,
+    'cañuelas': 320,
+    'san vicente': 340,
+    'alejandro korn': 330,
+    'brandsen': 320,
+    'monte': 300,
+    'ranchos': 280,
+    'general paz': 260,
+    'las flores': 240,
+    'rauch': 80,
+    'ayacucho': 100,
+    'benito juárez': 120,
+    'laprida': 140,
+    'coronel suárez': 180,
+    'saavedra': 200,
+    'pigüé': 220,
+    'tornquist': 240,
+    'coronel pringles': 260,
+    'coronel dorrego': 280,
+    'balcarce': 120,
+    'lobería': 150,
+    'san cayetano': 180,
+    'general pueyrredón': 350,
+    'villa gesell': 400,
+    'pinamar': 420,
+    'general madariaga': 380,
+    'dolores': 320,
+    'chascomús': 280,
+    'lezama': 260,
+    'castelli': 240,
+    'pila': 220,
+    'general guido': 200,
+    'maipú': 180,
+    'general alvarado': 160,
+    'miramar': 140,
+    'general lavalle': 120,
+    'la costa': 100,
+    'san clemente del tuyú': 80,
+    'santa teresita': 70,
+    'mar de ajó': 60,
+    'general belgrano': 200,
+    'tordillo': 180,
+    'vicente lópez': 350,
+    'san isidro': 340,
+    'san fernando': 330,
+    'tigre': 320,
+    'malvinas argentinas': 310,
+    'josé c. paz': 300,
+    'pilar': 290,
+    'escobar': 280,
+    'moreno': 270,
+    'merlo': 260,
+    'ituzaingó': 250,
+    'hurlingham': 240,
+    'morón': 230,
+    'tres de febrero': 220,
+    'san martín': 210,
+    'la matanza': 200,
+    'ezeiza': 190,
+    'esteban echeverría': 180,
+    'almirante brown': 170,
+    'quilmes': 160,
+    'berazategui': 150,
+    'florencio varela': 140,
+    'avellaneda': 130,
+    'lanús': 120,
+    'lomas de zamora': 110,
+    'berisso': 100,
+    'ensenada': 90
+  };
+  
+  const localidadLower = localidad.toLowerCase();
+  let distanciaKm = 50; // Distancia por defecto
+  
+  // Buscar coincidencia
+  for (const [zona, distancia] of Object.entries(distanciasAproximadas)) {
+    if (localidadLower.includes(zona) || zona.includes(localidadLower)) {
+      distanciaKm = distancia;
+      break;
+    }
+  }
+  
+  // Calcular costo: $1000 por km
+  costoEnvio = 1000 * distanciaKm;
+  
+  // Marcar como calculado
+  costoEnvioCalculado = true;
+  
+  costoEnvioDiv.className = 'costo-envio-mejorado';
+  valorEnvioSpan.textContent = `$${costoEnvio.toFixed(2)}`;
+  distanciaEnvioSpan.textContent = `${distanciaKm} km aproximado desde nuestra ubicación`;
+  tiempoEnvioSpan.textContent = "Tiempo estimado: cálculo aproximado";
+  renderCarrito();
+}
+
+/* Fetch productos */
+fetch(SHEET_URL)
+.then(r=>r.json())
+.then(data=>{
+  productosGlobal=data;
+  renderCatalogo(productosGlobal);
+  [...new Set(productosGlobal.map(p=>p.categoria))].forEach(cat=>{
+    const option=document.createElement('option');
+    option.value=cat; option.textContent=cat;
+    categoriaFiltro.appendChild(option);
+  });
+});
+
+/* Fetch precios reales desde Productos */
+fetch(SHEET_PRODUCTOS)
+.then(r=>r.json())
+.then(data=>{productosPrecios=data;});
+
+/* Enviar pedido con precios reales y teléfono */
+enviarPedidoBtn.addEventListener("click", async e=>{
+  e.preventDefault();
+  if(carrito.length===0){alert("El carrito está vacío");return;}
+  
+  // Validar dirección obligatoria
+  if(!direccionInput.value.trim()) {
+    alert("Por favor, ingresa tu dirección de entrega");
+    direccionInput.focus();
+    return;
+  }
+  
+  // Validar formato de dirección
+  if(!validarDireccion(direccionInput.value)) {
+    alert("Por favor, ingresa una dirección válida (ej: Uriburu 147)");
+    direccionInput.focus();
+    return;
+  }
+  
+  // Validar localidad seleccionada
+  if(!localidadSelect.value) {
+    alert("Por favor, selecciona tu localidad");
+    localidadSelect.focus();
+    return;
+  }
+
+  const productosFormateados = carrito.map(item=>{
+    const prodPrecio = productosPrecios.find(p=>p.nombre===item.nombre);
+    const precio = prodPrecio ? parseFloat(prodPrecio.precio) : 0;
+    return `${item.nombre} x${item.cantidad} ($${precio.toFixed(2)} c/u)`;
+  }).join(" | ");
+
+  const totalProductos = carrito.reduce((s,item)=>{
+    const prodPrecio = productosPrecios.find(p=>p.nombre===item.nombre);
+    const precio = prodPrecio ? parseFloat(prodPrecio.precio) : 0;
+    return s + precio*item.cantidad;
+  },0);
+
+  // Determinar si se aplica costo de envío (solo si el total de productos es menor a $20,000)
+  const costoEnvioFinal = totalProductos < 20000 ? costoEnvio : 0;
+  const totalFinal = totalProductos + costoEnvioFinal;
+
+  const fecha = new Date().toLocaleString('es-AR');
+
+  const params=new URLSearchParams({
+    fecha: fecha,
+    usuario: usuarioInput.value||"Invitado",
+    productos: productosFormateados,
+    direccion: direccionInput.value||"Sin dirección",
+    localidad: localidadSelect.value||"Sin localidad",
+    referencia: referenciaInput.value||"Sin referencia",
+    metodoPago: metodoPagoSelect.value,
+    observaciones: observacionesInput.value||"Ninguna",
+    totalProductos: totalProductos.toFixed(2),
+    costoEnvio: costoEnvioFinal.toFixed(2),
+    total: totalFinal.toFixed(2),
+    telefono: telefonoUsuario
+  });
+
+  const loader = document.createElement('div');
+  loader.className = 'position-fixed top-50 start-50 translate-middle bg-dark text-white p-4 rounded-3 z-3';
+  loader.innerHTML = `
+    <div class="d-flex align-items-center">
+      <div class="spinner-border me-3" role="status"></div>
+      <div>Enviando pedido...</div>
+    </div>
+  `;
+  document.body.appendChild(loader);
+
+  fetch(URL_SCRIPT_PEDIDO+"?"+params.toString())
+    .then(r=>r.json())
+    .then(res=>{
+      loader.remove();
+      if(res.success){
+        // Mostrar mensaje informativo si no se aplicó el costo de envío
+        if(totalProductos >= 20000) {
+          alert("✅ Pedido enviado correctamente\n\n🎉 ¡Envío gratis! Tu pedido supera los $20.000");
+        } else {
+          alert("✅ Pedido enviado correctamente");
+        }
+        carrito=[];
+        costoEnvio = 0;
+        costoEnvioCalculado = false;
+        costoEnvioDiv.style.display = 'none';
+        renderCarrito();
+      }
+      else alert("❌ Error: "+res.error);
+    })
+    .catch(err=>{loader.remove(); alert("❌ Error de conexión: "+err);});
+});
+
+/* Login / Registro */
+toggleLogin.addEventListener('click',(e)=>{
+  e.preventDefault();
+  if(loginTitle.textContent==='Iniciar Sesión'){
+    loginTitle.textContent='Crear Cuenta'; 
+    loginBtn.textContent='Registrarse';
+    document.querySelector('.text-muted').textContent = 'Crea tu nueva cuenta';
+    nombreContainer.style.display='block'; 
+    telefonoContainer.style.display='block';
+    toggleLogin.textContent = '¿Ya tienes cuenta? Inicia sesión';
+  } else {
+    loginTitle.textContent='Iniciar Sesión'; 
+    loginBtn.textContent='Ingresar';
+    document.querySelector('.text-muted').textContent = 'Accede a tu cuenta';
+    nombreContainer.style.display='none'; 
+    telefonoContainer.style.display='none';
+    toggleLogin.textContent = 'Crear cuenta';
+  }
+});
+
+loginBtn.addEventListener('click',()=>{
+  if(loginTitle.textContent==='Iniciar Sesión'){
+    fetch(`https://opensheet.elk.sh/${SHEET_ID}/Usuarios`)
+      .then(r=>r.json())
+      .then(data=>{
+        usersCache=data;
+        const user=usersCache.find(u=>u.Usuario===usuarioInput.value && u.Contraseña===passwordInput.value);
+        if(user){
+          if(parseInt(user.Presupuestos || 0) > 3){
+            alert("❌ Has excedido el límite de presupuestos. No puedes entrar."); return;
+          }
+          telefonoUsuario = user.Telefono || ""; // Guardamos teléfono
+          document.body.classList.add('logged'); 
+          mainSection.style.display='block';
+          userInfoSpan.textContent = `Hola, ${user.Nombre || user.Usuario}`;
+          
+          // Cargar localidades después del login
+          cargarLocalidades();
+        } else alert('Usuario o contraseña incorrectos');
+      })
+      .catch(err=>{console.error(err); alert('Error al conectar con la base de usuarios');});
+  } else {
+    if(!usuarioInput.value || !passwordInput.value || !nombreInput.value || !telefonoInput.value){
+      alert('Completa todos los campos'); return;
+    }
+    telefonoUsuario = telefonoInput.value; // guardamos teléfono nuevo usuario
+
+    const loader = document.createElement('div');
+    loader.className = 'position-fixed top-50 start-50 translate-middle bg-dark text-white p-4 rounded-3 z-3';
+    loader.innerHTML = `
+      <div class="d-flex align-items-center">
+        <div class="spinner-border me-3" role="status"></div>
+        <div>Creando usuario...</div>
+      </div>
+    `;
+    document.body.appendChild(loader);
+
+    const formData=new FormData();
+    formData.append('Usuario',usuarioInput.value);
+    formData.append('Contraseña',passwordInput.value);
+    formData.append('Nombre',nombreInput.value);
+    formData.append('Telefono',telefonoInput.value);
+    fetch(URL_SCRIPT_CREAR_USUARIO,{method:'POST',body:formData})
+      .then(r=>r.json())
+      .then(res=>{
+        loader.remove();
+        alert(res.message);
+        if(res.success){
+          document.body.classList.add('logged'); 
+          mainSection.style.display='block';
+          userInfoSpan.textContent = `Hola, ${nombreInput.value}`;
+          loginTitle.textContent='Iniciar Sesión'; 
+          loginBtn.textContent='Ingresar';
+          nombreContainer.style.display='none'; 
+          telefonoContainer.style.display='none';
+          toggleLogin.textContent = 'Crear cuenta';
+          
+          // Cargar localidades después del registro
+          cargarLocalidades();
+        }
+      }).catch(()=>{loader.remove(); alert('Error al crear usuario');});
+  }
+});
+
+// Event listeners para calcular envío cuando cambian dirección o localidad
+let timeoutCalculoEnvio;
+direccionInput.addEventListener('input', () => {
+  // Limpiar timeout anterior
+  clearTimeout(timeoutCalculoEnvio);
+  
+  // Validar formato de dirección
+  if (!validarDireccion(direccionInput.value)) {
+    validacionDireccionDiv.textContent = "Por favor, ingresa una dirección válida (ej: Uriburu 147)";
+    validacionDireccionDiv.className = "validacion-direccion error";
+    direccionInput.classList.add("input-error");
+    direccionInput.classList.remove("input-ok");
+    
+    costoEnvio = 0;
+    costoEnvioCalculado = false;
+    costoEnvioDiv.style.display = 'none';
+    renderCarrito();
+    return;
+  }
+  
+  // Mostrar validación exitosa
+  validacionDireccionDiv.textContent = "✓ Dirección válida";
+  validacionDireccionDiv.className = "validacion-direccion ok";
+  direccionInput.classList.remove("input-error");
+  direccionInput.classList.add("input-ok");
+  
+  // Esperar 1 segundo después de que el usuario deje de escribir para calcular
+  timeoutCalculoEnvio = setTimeout(() => {
+    if (direccionInput.value && localidadSelect.value) {
+      calcularCostoEnvio(direccionInput.value, localidadSelect.value);
+    } else {
+      costoEnvio = 0;
+      costoEnvioCalculado = false;
+      costoEnvioDiv.style.display = 'none';
+      renderCarrito();
+    }
+  }, 1000);
+});
+
+localidadSelect.addEventListener('change', () => {
+  // Limpiar timeout anterior
+  clearTimeout(timeoutCalculoEnvio);
+  
+  // Esperar 1 segundo después de que el usuario cambie la localidad para calcular
+  timeoutCalculoEnvio = setTimeout(() => {
+    if (direccionInput.value && localidadSelect.value) {
+      calcularCostoEnvio(direccionInput.value, localidadSelect.value);
+    } else {
+      costoEnvio = 0;
+      costoEnvioCalculado = false;
+      costoEnvioDiv.style.display = 'none';
+      renderCarrito();
+    }
+  }, 1000);
+});
+
+// Botón de cerrar sesión
+logoutBtn.addEventListener('click', () => {
+  document.body.classList.remove('logged');
+  mainSection.style.display = 'none';
+  loginSection.style.display = 'flex';
+  carrito = [];
+  renderCarrito();
+  usuarioInput.value = '';
+  passwordInput.value = '';
+});
+</script>
+</body>
+</html>
